@@ -37,7 +37,8 @@ import {
   FALLBACK_MOCK_STOCK,
   MASTER_GROUPS,
   getInspectionSortRank,
-  formatBagsDisplay
+  formatBagsDisplay,
+  cleanShopName
 } from './utils/constants';
 
 export default function App() {
@@ -58,6 +59,16 @@ export default function App() {
     inspectionTime: new Date().toTimeString().slice(0, 5),
     remarks: 'Physical stock verified against ePOS stock balance. Stacks arranged systematically.'
   });
+
+  // Ensure legacy cached metadata does not retain messy ePOS report header
+  useEffect(() => {
+    if (metadata?.shop_name && /stock\s*register/i.test(metadata.shop_name)) {
+      setMetadata(prev => ({
+        ...prev,
+        shop_name: cleanShopName(prev.shop_name, fpsId, prev.tso)
+      }));
+    }
+  }, [fpsId, metadata?.shop_name, setMetadata]);
 
   // UI States
   const [isLoading, setIsLoading] = useState(false);
@@ -244,9 +255,10 @@ export default function App() {
         if (data && data.items && data.items.length > 0 && data.source === 'epos_live') {
           setStockItems(data.items);
           setDataSource('epos_live');
+          const safeShop = cleanShopName(data.shop_name, cleanId, data.tso);
           setMetadata(prev => ({
             ...prev,
-            shop_name: data.shop_name || `ARD ${cleanId}`,
+            shop_name: safeShop,
             district: data.district || prev.district || 'Malappuram',
             tso: data.tso || prev.tso || 'Ponnani'
           }));
@@ -255,7 +267,7 @@ export default function App() {
           try {
             localStorage.setItem(`kerala_fps_verified_${cleanId}`, JSON.stringify({
               items: data.items,
-              shop_name: data.shop_name,
+              shop_name: safeShop,
               district: data.district,
               tso: data.tso,
               savedAt: new Date().toISOString()
@@ -325,7 +337,7 @@ export default function App() {
     if (cached.shop_name) {
       setMetadata(prev => ({
         ...prev,
-        shop_name: cached.shop_name,
+        shop_name: cleanShopName(cached.shop_name, cached.fpsId || fpsId, cached.tso),
         district: cached.district || prev.district,
         tso: cached.tso || prev.tso
       }));

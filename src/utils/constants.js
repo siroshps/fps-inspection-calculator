@@ -519,3 +519,38 @@ export const formatBagsDisplay = (num, useAscii = false) => {
   return parseFloat(val.toFixed(2)).toString();
 };
 
+/**
+ * Cleans and normalizes Kerala ARD / FPS shop names.
+ * Strips raw ePOS register report headers like "Stock Register for FPS 2056030 (District: ...)"
+ *
+ * @param {string} rawName - Raw shop name string
+ * @param {string|number} fpsId - ARD / FPS Code
+ * @param {string} [tso] - Taluk Supply Office
+ * @returns {string} Normalized clean shop name, e.g. "ARD 2056030 (Ponnani)"
+ */
+export const cleanShopName = (rawName, fpsId, tso) => {
+  const idStr = String(fpsId || '').trim();
+  let name = (rawName || '').trim();
+
+  // If empty or raw stock register table title
+  if (!name || /stock\s*register/i.test(name)) {
+    return tso && tso !== 'Supply Office' ? `ARD ${idStr} (${tso})` : `ARD ${idStr}`;
+  }
+
+  // Strip extraneous "Stock Register for" if still present
+  name = name.replace(/^Stock\s+Register\s+(for\s+)?/i, '').trim();
+
+  // If already starts with ARD <fpsId> or FPS <fpsId>
+  if (/^(ard|fps)\s*/i.test(name)) {
+    return name;
+  }
+
+  // If starts with raw fpsId (e.g. "2056030 - Some Name" or "2056030")
+  if (idStr && name.startsWith(idStr)) {
+    return `ARD ${name}`;
+  }
+
+  // If it's a dealer name or custom shop name
+  return idStr ? `ARD ${idStr} - ${name}` : name;
+};
+

@@ -68,18 +68,25 @@ def parse_epos_html(html_text: str, fps_id: str, month: int, year: int, filter_z
 
     district = "Kerala"
     tso = "Supply Office"
-    shop_title = f"FPS {fps_id}"
+    shop_title = f"ARD {fps_id}"
     
     title_el = table.find("th", colspan=True)
     if title_el:
         title_text = title_el.get_text(strip=True)
-        shop_title = title_text
         dist_match = re.search(r"District:\s*([^/]+)", title_text, re.IGNORECASE)
         if dist_match:
             district = dist_match.group(1).strip()
         tso_match = re.search(r"TSO:\s*([^\)]+)", title_text, re.IGNORECASE)
         if tso_match:
             tso = tso_match.group(1).strip()
+
+        # Clean shop title: Kerala ePOS headers say "Stock Register for FPS 2056030 (District: ... / TSO: ...)"
+        # Store clean ARD identifier rather than the whole table header
+        if re.search(r"stock\s*register", title_text, re.IGNORECASE):
+            shop_title = f"ARD {fps_id} ({tso})" if tso and tso != "Supply Office" else f"ARD {fps_id}"
+        else:
+            clean_name = re.sub(r"^Stock Register (for\s*)?", "", title_text, flags=re.IGNORECASE).strip()
+            shop_title = clean_name or f"ARD {fps_id}"
 
     items = []
     zero_stock_count = 0

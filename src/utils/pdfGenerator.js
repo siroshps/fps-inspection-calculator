@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { MASTER_GROUPS, formatBagsDisplay } from './constants';
+import { MASTER_GROUPS, formatBagsDisplay, cleanShopName } from './constants';
 
 export function generateAuditPdf({
   fpsId,
@@ -45,74 +45,94 @@ export function generateAuditPdf({
   doc.setTextColor(220, 235, 255);
   doc.text('FPS PHYSICAL STOCK AUDIT & ePOS RECONCILIATION REPORT', pageWidth / 2, 19, { align: 'center' });
 
-  // --- 2. Metadata Box (Two-Column Balanced Grid with Strict Width Budget) ---
-  let y = 28;
-  const boxW = pageWidth - 22; // 188mm wide (margins 11mm on each side)
-  doc.setDrawColor(203, 213, 225); // Slate-300
-  doc.setFillColor(248, 250, 252); // Slate-50
-  doc.roundedRect(11, y, boxW, 28, 2, 2, 'FD');
-
-  // Vertical divider between columns
-  doc.setDrawColor(226, 232, 240); // Slate-200
-  doc.line(105, y + 3, 105, y + 25);
-
-  // Left column layout
-  const leftLabelX = 15;
-  const leftValX = 45;
-  const maxLeftValW = 58;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(30, 41, 59);
-
-  doc.text('FPS / ARD Code:', leftLabelX, y + 6);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${fpsId} - ${metadata.shop_name || 'Ration Shop'}`, leftValX, y + 6, { maxWidth: maxLeftValW });
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('District / TSO:', leftLabelX, y + 12);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${metadata.district || 'Malappuram'} / ${metadata.tso || 'Ponnani Firka'}`, leftValX, y + 12, { maxWidth: maxLeftValW });
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Std Bag Weight:', leftLabelX, y + 18);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${globalBagWeight} kg / bag`, leftValX, y + 18);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Audit Date & Time:', leftLabelX, y + 24);
-  doc.setFont('helvetica', 'normal');
+  // --- 2. Metadata Box (Two-Column Balanced Grid with Dynamic Content Height) ---
+  const displayShop = cleanShopName(metadata.shop_name, fpsId, metadata.tso);
+  const districtTso = `${metadata.district || 'Malappuram'} / ${metadata.tso || 'Ponnani Firka'}`;
+  const bagWeightStr = `${globalBagWeight} kg / bag`;
   const inspectDate = metadata.inspectionDate || new Date().toISOString().split('T')[0];
   const inspectTime = metadata.inspectionTime || new Date().toLocaleTimeString().slice(0, 5);
-  doc.text(`${inspectDate} at ${inspectTime}`, leftValX, y + 24);
+  const auditDateTime = `${inspectDate} at ${inspectTime}`;
 
-  // Right column layout
+  const officerName = metadata.inspectorName || 'Rationing Inspector';
+  const designation = metadata.inspectorDesignation || 'Rationing Inspector, Ponnani Firka';
+  const reportRef = `AUDIT-${fpsId}-${new Date().getTime().toString().slice(-6)}`;
+  const auditStatus = 'Reconciliation Completed';
+
+  const leftLabelX = 14;
+  const leftValX = 43;
+  const maxLeftValW = 60;
+
   const rightLabelX = 108;
   const rightValX = 138;
   const maxRightValW = 58;
 
-  doc.setFont('helvetica', 'bold');
-  doc.text('Inspecting Officer:', rightLabelX, y + 6);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${metadata.inspectorName || 'Rationing Inspector'}`, rightValX, y + 6, { maxWidth: maxRightValW });
+  const leftRows = [
+    { label: 'FPS / ARD Code:', value: displayShop },
+    { label: 'District / TSO:', value: districtTso },
+    { label: 'Std Bag Weight:', value: bagWeightStr },
+    { label: 'Audit Date & Time:', value: auditDateTime }
+  ];
 
-  doc.setFont('helvetica', 'bold');
-  doc.text('Designation:', rightLabelX, y + 12);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${metadata.inspectorDesignation || 'Rationing Inspector, Ponnani Firka'}`, rightValX, y + 12, { maxWidth: maxRightValW });
+  const rightRows = [
+    { label: 'Inspecting Officer:', value: officerName },
+    { label: 'Designation:', value: designation },
+    { label: 'Report Ref No:', value: reportRef },
+    { label: 'Audit Status:', value: auditStatus }
+  ];
 
-  doc.setFont('helvetica', 'bold');
-  doc.text('Report Ref No:', rightLabelX, y + 18);
   doc.setFont('helvetica', 'normal');
-  doc.text(`AUDIT-${fpsId}-${new Date().getTime().toString().slice(-6)}`, rightValX, y + 18);
+  doc.setFontSize(8);
 
-  doc.setFont('helvetica', 'bold');
-  doc.text('Audit Status:', rightLabelX, y + 24);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Reconciliation Completed', rightValX, y + 24);
+  const rowHeights = [];
+  const splitLeftVals = [];
+  const splitRightVals = [];
+
+  for (let i = 0; i < 4; i++) {
+    const lLines = doc.splitTextToSize(leftRows[i].value, maxLeftValW);
+    const rLines = doc.splitTextToSize(rightRows[i].value, maxRightValW);
+    splitLeftVals.push(lLines);
+    splitRightVals.push(rLines);
+    const maxL = Math.max(lLines.length, rLines.length);
+    rowHeights.push(Math.max(5.5, maxL * 3.5 + 2));
+  }
+
+  const totalContentH = rowHeights.reduce((acc, h) => acc + h, 0);
+  const boxH = Math.max(28, totalContentH + 3.5);
+
+  let y = 28;
+  const boxW = pageWidth - 22; // 188mm wide (margins 11mm on each side)
+  doc.setDrawColor(203, 213, 225); // Slate-300
+  doc.setFillColor(248, 250, 252); // Slate-50
+  doc.roundedRect(11, y, boxW, boxH, 2, 2, 'FD');
+
+  // Vertical divider between columns
+  doc.setDrawColor(226, 232, 240); // Slate-200
+  doc.line(105, y + 3, 105, y + boxH - 3);
+
+  let curRowY = y + 5.5;
+  for (let i = 0; i < 4; i++) {
+    // Left column
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(30, 41, 59);
+    doc.text(leftRows[i].label, leftLabelX, curRowY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(splitLeftVals[i], leftValX, curRowY);
+
+    // Right column
+    doc.setFont('helvetica', 'bold');
+    doc.text(rightRows[i].label, rightLabelX, curRowY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(splitRightVals[i], rightValX, curRowY);
+
+    curRowY += rowHeights[i];
+  }
 
   // --- 3. Itemized Commodity Reconciliation Table (10 Columns, Precisely Measured) ---
-  y += 33;
+  y = y + boxH + 4;
+
 
   const tableHeaders = [
     [
@@ -348,39 +368,68 @@ export function generateAuditPdf({
   }
 
   // --- 6. Official Signatures & Seal Block ---
-  const sigNeededSpace = 28;
-  if (finalY + sigNeededSpace + 10 > pageHeight) {
+  const dealerShopDisplay = cleanShopName(metadata.shop_name, fpsId, metadata.tso);
+  let dealerLine1 = dealerShopDisplay;
+  if (!dealerLine1.toLowerCase().startsWith('ard') && !dealerLine1.toLowerCase().startsWith('fps')) {
+    dealerLine1 = `ARD ${fpsId} - ${dealerLine1}`;
+  }
+  const dealerLine2 = `${metadata.district || 'Malappuram'} / ${metadata.tso || 'Ponnani'}`;
+
+  const officerLine1 = `${metadata.inspectorName || 'Rationing Inspector'}`;
+  const officerLine2 = `${metadata.inspectorDesignation || 'Rationing Inspector, Ponnani Firka'}`;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+
+  const leftLines1 = doc.splitTextToSize(dealerLine1, 62);
+  const leftLines2 = doc.splitTextToSize(dealerLine2, 62);
+
+  const rightLines1 = doc.splitTextToSize(officerLine1, 60);
+  const rightLines2 = doc.splitTextToSize(officerLine2, 60);
+
+  const leftH = (leftLines1.length + leftLines2.length) * 3.3 + 8;
+  const rightH = (rightLines1.length + rightLines2.length) * 3.3 + 8;
+  const sigNeededSpace = Math.max(leftH, rightH) + 8;
+
+  if (finalY + sigNeededSpace + 8 > pageHeight) {
     doc.addPage();
     finalY = 16;
   } else {
     // Pin signature neatly above footer
-    finalY = Math.max(finalY + 4, pageHeight - 38);
+    finalY = Math.max(finalY + 4, pageHeight - (sigNeededSpace + 8));
   }
 
   // Left Signature: ARD Dealer
   doc.setDrawColor(100, 116, 139);
-  doc.line(15, finalY + 10, 75, finalY + 10);
+  doc.line(15, finalY + 6, 75, finalY + 6);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(30, 41, 59);
-  doc.text('Signature & Seal of ARD Dealer', 15, finalY + 14);
+  doc.text('Signature & Seal of ARD Dealer', 15, finalY + 10.5);
+
+  let leftCurY = finalY + 14.5;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(71, 85, 105);
-  doc.text(`ARD No: ${fpsId} - ${metadata.shop_name || 'Ration Shop'}`, 15, finalY + 18, { maxWidth: 65 });
-  doc.text(`${metadata.district || 'Malappuram'} / ${metadata.tso || 'Ponnani'}`, 15, finalY + 22, { maxWidth: 65 });
+  doc.text(leftLines1, 15, leftCurY);
+  leftCurY += leftLines1.length * 3.3;
+  doc.text(leftLines2, 15, leftCurY);
 
   // Right Signature: Inspecting Officer
-  doc.line(pageWidth - 75, finalY + 10, pageWidth - 15, finalY + 10);
+  doc.setDrawColor(100, 116, 139);
+  doc.line(pageWidth - 75, finalY + 6, pageWidth - 15, finalY + 6);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(30, 41, 59);
-  doc.text('Signature of Inspecting Officer', pageWidth - 75, finalY + 14);
+  doc.text('Signature of Inspecting Officer', pageWidth - 75, finalY + 10.5);
+
+  let rightCurY = finalY + 14.5;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(71, 85, 105);
-  doc.text(`${metadata.inspectorName || 'Rationing Inspector'}`, pageWidth - 75, finalY + 18, { maxWidth: 60 });
-  doc.text(`${metadata.inspectorDesignation || 'Rationing Inspector, Ponnani Firka'}`, pageWidth - 75, finalY + 22, { maxWidth: 60 });
+  doc.text(rightLines1, pageWidth - 75, rightCurY);
+  rightCurY += rightLines1.length * 3.3;
+  doc.text(rightLines2, pageWidth - 75, rightCurY);
 
   // --- 7. Digital Certified Footer (Across All Pages) ---
   const totalPages = doc.internal.getNumberOfPages();
