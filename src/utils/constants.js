@@ -478,7 +478,7 @@ export const formatExpectedBagsWithFraction = (sysKg = 0, countedBags = 0, bagWe
   if (fullBags === 0) {
     formatted = fraction || '0';
   } else if (fraction) {
-    formatted = `${fullBags} ${fraction}`;
+    formatted = `${fullBags}${fraction}`;
   } else {
     formatted = `${fullBags}`;
   }
@@ -492,7 +492,7 @@ export const formatExpectedBagsWithFraction = (sysKg = 0, countedBags = 0, bagWe
  *
  * @param {number} num - Number of bags
  * @param {boolean} useAscii - If true, returns ascii fractions
- * @returns {string} e.g. "76 ½", "½", "10", "0"
+ * @returns {string} e.g. "76½", "½", "10", "0"
  */
 export const formatBagsDisplay = (num, useAscii = false) => {
   if (num === null || num === undefined || isNaN(num)) return '0';
@@ -513,7 +513,7 @@ export const formatBagsDisplay = (num, useAscii = false) => {
   else if (Math.abs(frac - 0.75) < 0.05) fracSymbol = threeQtr;
   
   if (fracSymbol) {
-    return full > 0 ? `${full} ${fracSymbol}` : fracSymbol;
+    return full > 0 ? `${full}${fracSymbol}` : fracSymbol;
   }
   
   return parseFloat(val.toFixed(2)).toString();

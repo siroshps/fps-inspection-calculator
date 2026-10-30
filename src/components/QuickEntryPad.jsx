@@ -273,7 +273,7 @@ export default function QuickEntryPad({
                     setHistoryModalComm(comm);
                   }}
                   onClick={() => handleCommClick(comm)}
-                  className={`p-2 rounded-xl text-left transition-all tap-bounce border-2 flex flex-col justify-between gap-1 select-none ${
+                  className={`px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl text-left transition-all tap-bounce border-2 flex flex-col justify-between gap-0.5 sm:gap-1 select-none ${
                     isSelected
                       ? 'bg-blue-50/90 border-blue-600 text-blue-900 shadow-md ring-2 ring-blue-500/20'
                       : 'bg-slate-50/80 border-slate-200 hover:border-slate-300 text-slate-800 hover:bg-slate-100'
@@ -281,28 +281,28 @@ export default function QuickEntryPad({
                   title={`${comm.label} - Total: ${totalExpected}b, Balance: ${remDisplay}, Counted: ${totals.bags}b. Hold to view history`}
                 >
                   {/* ROW 1: Commodity Label, Total Bags, Balance Bags (Left) & Counted Bags (Right) */}
-                  <div className="flex items-center justify-between w-full gap-1">
-                    <div className="flex items-center gap-1 min-w-0">
+                  <div className="flex items-center justify-between w-full gap-0.5 sm:gap-1">
+                    <div className="flex items-center min-w-0">
                       {isSelected && (
-                        <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse shrink-0 mr-1"></span>
                       )}
-                      {/* Commodity Name (e.g. RR) */}
-                      <span className="font-bold text-xs sm:text-sm leading-tight truncate">
+                      {/* Commodity Name (e.g. RR or Wheat) */}
+                      <span className="font-bold text-xs sm:text-sm leading-tight shrink-0 mr-1 truncate">
                         {comm.shortLabel || comm.label}
                       </span>
-                      {/* Total expected bags in black font same as commodity name (e.g. 80b) */}
-                      <span className={`font-bold text-xs sm:text-sm font-mono shrink-0 ml-0.5 ${
-                        isSelected ? 'text-blue-950' : 'text-slate-900'
-                      }`}>
-                        {totalExpected}b
-                      </span>
-                      {/* Separator - */}
-                      <span className="text-slate-400 font-mono text-xs shrink-0">
-                        -
-                      </span>
-                      {/* Balance remaining in color code (e.g. (10b)) */}
-                      <span className={`shrink-0 font-mono text-[11px] sm:text-xs ${remColorClass}`}>
-                        ({remDisplay})
+                      {/* Tight combo: TotalBags-(BalanceBags) with NO spaces around separator '-' */}
+                      <span className="inline-flex items-center shrink-0">
+                        <span className={`font-bold text-xs sm:text-sm font-mono leading-tight ${
+                          isSelected ? 'text-blue-950' : 'text-slate-900'
+                        }`}>
+                          {totalExpected}b
+                        </span>
+                        <span className="text-slate-400 font-mono text-xs leading-tight">
+                          -
+                        </span>
+                        <span className={`font-mono text-[11px] sm:text-xs leading-tight ${remColorClass}`}>
+                          ({remDisplay})
+                        </span>
                       </span>
                     </div>
                     {/* Counted Bags Badge on Right Side (e.g. 70b in blue background as normal) */}
