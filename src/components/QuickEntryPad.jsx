@@ -235,6 +235,29 @@ export default function QuickEntryPad({
               const remainingExpected = formatExpectedBagsWithFraction(comm.systemStockKg, totals.bags, commBagWt);
               const totalExpected = formatExpectedBagsWithFraction(comm.systemStockKg, 0, commBagWt);
 
+              const isExcess = remainingExpected.startsWith('+');
+              const isZeroOrQuarter = remainingExpected === '0' || remainingExpected === '¼' || remainingExpected === '1/4';
+              
+              let remColorClass = '';
+              if (isExcess) {
+                remColorClass = 'text-red-600 font-black';
+              } else if (isZeroOrQuarter && totals.bags > 0) {
+                remColorClass = 'text-emerald-600 font-bold';
+              } else if (isSelected) {
+                remColorClass = 'text-blue-700 font-bold';
+              } else {
+                remColorClass = 'text-amber-700 font-bold';
+              }
+
+              let remDisplay = '';
+              if (remainingExpected === '0') {
+                remDisplay = '0b';
+              } else if (isExcess) {
+                remDisplay = `+${remainingExpected.slice(1)}b`;
+              } else {
+                remDisplay = `${remainingExpected}b`;
+              }
+
               return (
                 <button
                   key={comm.id}
@@ -255,31 +278,34 @@ export default function QuickEntryPad({
                       ? 'bg-blue-50/90 border-blue-600 text-blue-900 shadow-md ring-2 ring-blue-500/20'
                       : 'bg-slate-50/80 border-slate-200 hover:border-slate-300 text-slate-800 hover:bg-slate-100'
                   }`}
-                  title={`${comm.label} - Expected: ${totalExpected}b, ${remainingExpected.startsWith('+') ? 'Excess' : 'Remaining'}: ${remainingExpected}b. Hold to view history`}
+                  title={`${comm.label} - Total: ${totalExpected}b, Balance: ${remDisplay}, Counted: ${totals.bags}b. Hold to view history`}
                 >
-                  {/* ROW 1: Commodity Label + Expected Bags in Bracket (Left) & Counted Bags (Right) */}
+                  {/* ROW 1: Commodity Label, Total Bags, Balance Bags (Left) & Counted Bags (Right) */}
                   <div className="flex items-center justify-between w-full gap-1">
                     <div className="flex items-center gap-1 min-w-0">
                       {isSelected && (
                         <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
                       )}
+                      {/* Commodity Name (e.g. RR) */}
                       <span className="font-bold text-xs sm:text-sm leading-tight truncate">
                         {comm.shortLabel || comm.label}
                       </span>
-                      {/* Expected remaining bag count in bracket (reduces as stacks are entered, red if excess) */}
-                      <span className={`shrink-0 font-mono font-bold text-[11px] sm:text-xs ml-0.5 ${
-                        remainingExpected.startsWith('+')
-                          ? 'text-red-600 font-black'
-                          : remainingExpected === '0' && totals.bags > 0
-                          ? 'text-emerald-600'
-                          : isSelected
-                          ? 'text-blue-700'
-                          : 'text-amber-700'
+                      {/* Total expected bags in black font same as commodity name (e.g. 80b) */}
+                      <span className={`font-bold text-xs sm:text-sm font-mono shrink-0 ml-0.5 ${
+                        isSelected ? 'text-blue-950' : 'text-slate-900'
                       }`}>
-                        ({remainingExpected})
+                        {totalExpected}b
+                      </span>
+                      {/* Separator - */}
+                      <span className="text-slate-400 font-mono text-xs shrink-0">
+                        -
+                      </span>
+                      {/* Balance remaining in color code (e.g. (10b)) */}
+                      <span className={`shrink-0 font-mono text-[11px] sm:text-xs ${remColorClass}`}>
+                        ({remDisplay})
                       </span>
                     </div>
-                    {/* Counted Bags Badge on Right Side */}
+                    {/* Counted Bags Badge on Right Side (e.g. 70b in blue background as normal) */}
                     <span className={`shrink-0 font-mono font-bold text-[10.5px] px-1.5 py-0.2 rounded border ${
                       totals.bags > 0 
                         ? 'bg-blue-600 text-white border-blue-700 shadow-2xs' 
@@ -289,13 +315,10 @@ export default function QuickEntryPad({
                     </span>
                   </div>
 
-                  {/* ROW 2: ePOS Stock with Total Bags (Left) & Stack Kg (Right) */}
-                  <div className="flex items-center justify-between w-full text-[10px] font-mono text-slate-500 gap-1">
-                    <span 
-                      className="truncate"
-                      title={`ePOS Stock: ${comm.systemStockKg !== undefined ? comm.systemStockKg.toLocaleString() : '0'}kg (Total: ${totalExpected} bags)`}
-                    >
-                      ePOS: <strong className="text-slate-700">{comm.systemStockKg !== undefined ? Math.round(comm.systemStockKg).toLocaleString() : '0'}kg - {totalExpected}b</strong>
+                  {/* ROW 2: ePOS Stock (Left) & Stack Kg (Right) - Clean without clutter */}
+                  <div className="flex items-center justify-between w-full text-[10px] font-mono text-slate-500">
+                    <span className="truncate">
+                      ePOS: <strong className="text-slate-700">{comm.systemStockKg !== undefined ? Math.round(comm.systemStockKg).toLocaleString() : '0'}kg</strong>
                     </span>
                     {totals.bags > 0 ? (
                       <span className="font-semibold text-blue-800 shrink-0 ml-1">
