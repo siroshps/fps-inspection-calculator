@@ -35,9 +35,14 @@
 * **Fractional Bag Buttons**: Quick buttons for `+¼`, `+½`, `+¾`, and `+1` bags for loose/partially filled gunny bags.
 * **Touch-and-Hold (Long Press) History**: Pressing and holding any commodity button pops up that specific commodity's stack count history without leaving the numpad.
 * **Commodity Quick Stack Presets**: One-tap buttons for standard stack counts (`10`, `11`, `12`, `13`, `14`, `15`).
-* **All-Time Total Expected Bags Display**:
-  * **1. Select Commodity Grid**: Each card shows `ePOS: <kg>kg - <Total>b` (e.g. `ePOS: 4,000kg - 80b`) at all times alongside the counted weight, while the top row shows the countdown balance `(Bal: <exp>b)`.
-  * **2. Adding to Row**: Displays `2. Adding to: BR (Bal: 45b)` and explicitly displays `Bag Wt: 50 kg - Total 80b` so inspectors always know the total book bags regardless of stack progress.
+* **All-Time Total Expected Bags & Compact Card Layout**:
+  * **1. Select Commodity Grid**:
+    * **Row 1**: Displays `RR 80b - (10b)` on the left with `70b` counted badge in blue on the right:
+      * `80b` is bold black matching the commodity font (total expected bags).
+      * `(10b)` is the countdown balance color-coded: red if excess (`+`), green if zero or within ¼ bag (`0b`, `¼b`), and amber/blue while counting down.
+      * `70b` is the counted stacks badge in blue background.
+    * **Row 2**: Clean ePOS closing balance `ePOS: 4,000kg` on the left and counted weight `3,500kg` on the right (no extra clutter).
+  * **2. Adding to Row**: Displays `2. Adding to: BR (Bal: 45b)` and explicitly displays `Bag Wt: 50 kg - Total 80b`.
 
 ### 3.2 Intelligent ePOS Scraper & Multi-Attempt Fetching (`api/scraper.py`, `App.jsx`)
 * **Target URL**: `https://epos.kerala.gov.in/fps_stock.action` (POST `fps_id`, `month`, `year`).
