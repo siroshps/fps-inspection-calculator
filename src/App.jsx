@@ -698,7 +698,8 @@ export default function App() {
       stackStockKg: 0,
       looseKg: 0,
       totalPhysicalKg: 0,
-      differenceKg: 0
+      differenceKg: 0,
+      expectedBags: 0
     };
 
     Object.values(groups).forEach(grpObj => {
@@ -710,6 +711,8 @@ export default function App() {
           riceTotals.looseKg += item.looseKg;
           riceTotals.totalPhysicalKg += item.totalPhysicalKg;
           riceTotals.differenceKg += item.differenceKg;
+          const bw = item.bagWeight && item.bagWeight > 0 ? item.bagWeight : 50;
+          riceTotals.expectedBags += (item.systemStockKg / bw);
         }
       });
     });

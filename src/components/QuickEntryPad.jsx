@@ -289,10 +289,13 @@ export default function QuickEntryPad({
                     </span>
                   </div>
 
-                  {/* ROW 2: ePOS Stock (Left) & Stack Kg (Right) */}
-                  <div className="flex items-center justify-between w-full text-[10px] font-mono text-slate-500">
-                    <span className="truncate">
-                      ePOS: <strong className="text-slate-700">{comm.systemStockKg !== undefined ? comm.systemStockKg.toLocaleString() : '0'}</strong>
+                  {/* ROW 2: ePOS Stock with Total Bags (Left) & Stack Kg (Right) */}
+                  <div className="flex items-center justify-between w-full text-[10px] font-mono text-slate-500 gap-1">
+                    <span 
+                      className="truncate"
+                      title={`ePOS Stock: ${comm.systemStockKg !== undefined ? comm.systemStockKg.toLocaleString() : '0'}kg (Total: ${totalExpected} bags)`}
+                    >
+                      ePOS: <strong className="text-slate-700">{comm.systemStockKg !== undefined ? Math.round(comm.systemStockKg).toLocaleString() : '0'}kg - {totalExpected}b</strong>
                     </span>
                     {totals.bags > 0 ? (
                       <span className="font-semibold text-blue-800 shrink-0 ml-1">
@@ -322,17 +325,20 @@ export default function QuickEntryPad({
                   const exp = formatExpectedBagsWithFraction(activeCommodity.systemStockKg, activeBags, activeWeight);
                   const isEx = exp.startsWith('+');
                   return (
-                    <span className={`font-mono text-[11px] font-bold ${isEx ? 'text-rose-200 font-black' : 'text-amber-300'}`}>
-                      ({exp})
+                    <span 
+                      className={`font-mono text-[11px] font-bold ${isEx ? 'text-rose-200 font-black' : 'text-amber-300'}`}
+                      title={isEx ? `Excess: +${exp.slice(1)} bags over ePOS stock` : `Balance bags remaining: ${exp} bags`}
+                    >
+                      (Bal: {exp}b)
                     </span>
                   );
                 })()}
               </span>
             </div>
 
-            {/* Bag weight indicator */}
-            <div className="flex items-center gap-1 text-xs">
-              <span className="text-slate-500 text-[11px]">Bag Wt:</span>
+            {/* Bag weight indicator & Total ePOS Bags */}
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="text-slate-500 text-[11px] whitespace-nowrap">Bag Wt:</span>
               <button
                 type="button"
                 onClick={() => setUseCustomWeight(!useCustomWeight)}
@@ -356,6 +362,17 @@ export default function QuickEntryPad({
                   className="w-12 text-center text-xs font-mono font-bold bg-white border border-slate-300 rounded px-1 py-0.5"
                 />
               )}
+              {activeCommodity && (() => {
+                const totalActiveBags = formatExpectedBagsWithFraction(activeCommodity.systemStockKg, 0, activeWeight);
+                return (
+                  <span 
+                    className="text-slate-700 font-mono text-[11px] font-bold bg-white border border-slate-300 px-1.5 py-0.5 rounded shadow-2xs whitespace-nowrap"
+                    title={`Total expected bags in ePOS stock: ${activeCommodity.systemStockKg} kg ÷ ${activeWeight} kg = ${totalActiveBags} bags`}
+                  >
+                    - Total {totalActiveBags}b
+                  </span>
+                );
+              })()}
             </div>
           </div>
 

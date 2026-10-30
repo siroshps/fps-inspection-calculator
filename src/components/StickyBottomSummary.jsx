@@ -6,7 +6,7 @@ import {
   TrendingUp, 
   TrendingDown
 } from 'lucide-react';
-import { MASTER_GROUPS } from '../utils/constants';
+import { MASTER_GROUPS, formatBagsDisplay } from '../utils/constants';
 
 // POS Billing Terminal Logo
 export function PosTerminalIcon({ className = "w-4 h-4", ...props }) {
@@ -61,16 +61,26 @@ export function GunnyBagIcon({ className = "w-4 h-4", ...props }) {
 
 export default function StickyBottomSummary({
   groupedData = {},
-  totalRiceSummary = { systemStockKg: 0, totalPhysicalKg: 0, differenceKg: 0 }
+  totalRiceSummary = { systemStockKg: 0, totalPhysicalKg: 0, differenceKg: 0, totalBags: 0, expectedBags: 0 }
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Format numbers without floating points (whole integer) to conserve space and avoid truncation
+  // Format numbers in kg (whole integer)
   const fmt = (num, decimals = 0) => {
     if (num === null || num === undefined || isNaN(num)) return '0';
     return Math.round(Number(num)).toLocaleString('en-IN', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals
+    });
+  };
+
+  // Format quantity in Quintals (Qtl = 100 kg) with 2 decimal places (Indian civil supplies standard)
+  const fmtQtl = (num) => {
+    if (num === null || num === undefined || isNaN(num)) return '0.00';
+    const qtl = Number(num) / 100;
+    return qtl.toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     });
   };
 
@@ -103,6 +113,11 @@ export default function StickyBottomSummary({
   const diff = Number(totalRiceSummary?.differenceKg) || 0;
   const riceDiffStyle = getPastelBadge(diff);
   const diffVal = Math.round(diff);
+
+  const totalExpBags = formatBagsDisplay(
+    Math.round((totalRiceSummary?.expectedBags ?? (Number(totalRiceSummary?.systemStockKg || 0) / 50)) * 100) / 100
+  );
+  const countedBags = formatBagsDisplay(totalRiceSummary?.totalBags || 0);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-sm text-white shadow-2xl border-t border-slate-700 transition-all duration-200">
@@ -173,28 +188,38 @@ export default function StickyBottomSummary({
           </div>
         </div>
 
-        {/* Center: Inline System vs Physical Numbers with POS & Gunny Bag logos */}
-        <div className="flex items-center gap-1.5 sm:gap-3 text-xs sm:text-sm font-mono shrink-0">
+        {/* Center: Inline System vs Physical Numbers in QTL + Bags Count */}
+        <div className="flex items-center gap-1 sm:gap-2.5 text-xs sm:text-sm font-mono shrink-0">
           <div 
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-800/90 border border-slate-700/80 shadow-2xs" 
-            title="ePOS System Stock (kg)"
+            className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-1 rounded-md bg-slate-800/90 border border-slate-700/80 shadow-2xs" 
+            title={`ePOS System Stock: ${fmtQtl(totalRiceSummary.systemStockKg)} Qtl (${fmt(totalRiceSummary.systemStockKg)} kg) • Total: ${totalExpBags} bags`}
           >
             <PosTerminalIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400 shrink-0" />
-            <span className="font-bold text-slate-100 whitespace-nowrap">
-              {fmt(totalRiceSummary.systemStockKg)}
-            </span>
+            <div className="flex items-center gap-1 leading-tight">
+              <span className="font-bold text-slate-100 whitespace-nowrap">
+                {fmtQtl(totalRiceSummary.systemStockKg)} <span className="text-[10px] sm:text-xs font-normal text-slate-400">Qtl</span>
+              </span>
+              <span className="text-[10px] sm:text-xs text-sky-300 font-bold whitespace-nowrap">
+                ({totalExpBags}b)
+              </span>
+            </div>
           </div>
 
           <span className="text-slate-500 font-light text-xs">/</span>
 
           <div 
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-800/90 border border-slate-700/80 shadow-2xs" 
-            title="Physical Stock (Bags + Loose in kg)"
+            className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-1 rounded-md bg-slate-800/90 border border-slate-700/80 shadow-2xs" 
+            title={`Physical Stock: ${fmtQtl(totalRiceSummary.totalPhysicalKg)} Qtl (${fmt(totalRiceSummary.totalPhysicalKg)} kg) • Counted: ${countedBags} bags`}
           >
             <GunnyBagIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
-            <span className="font-bold text-emerald-400 whitespace-nowrap">
-              {fmt(totalRiceSummary.totalPhysicalKg)}
-            </span>
+            <div className="flex items-center gap-1 leading-tight">
+              <span className="font-bold text-emerald-400 whitespace-nowrap">
+                {fmtQtl(totalRiceSummary.totalPhysicalKg)} <span className="text-[10px] sm:text-xs font-normal text-emerald-500/80">Qtl</span>
+              </span>
+              <span className="text-[10px] sm:text-xs text-emerald-300 font-bold whitespace-nowrap">
+                ({countedBags}b)
+              </span>
+            </div>
           </div>
         </div>
 
