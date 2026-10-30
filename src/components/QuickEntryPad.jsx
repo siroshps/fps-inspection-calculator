@@ -336,68 +336,100 @@ export default function QuickEntryPad({
 
         {/* 2. Stack Entry Section (Presets + Numpad) */}
         <div className="bg-slate-50 rounded-xl p-3 sm:p-4 border border-slate-200/80">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                2. Adding to:
-              </span>
-              <span className="text-xs font-bold bg-blue-600 text-white px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
-                <span>{activeCommodity ? (activeCommodity.shortLabel || activeCommodity.label) : 'Select Commodity'}</span>
-                {activeCommodity && (() => {
-                  const activeBags = (commodityTotals || {})[activeCommodity.id]?.bags || (commodityTotals || {})[activeCommodity.label]?.bags || 0;
-                  const exp = formatExpectedBagsWithFraction(activeCommodity.systemStockKg, activeBags, activeWeight);
-                  const isEx = exp.startsWith('+');
-                  return (
-                    <span 
-                      className={`font-mono text-[11px] font-bold ${isEx ? 'text-rose-200 font-black' : 'text-amber-300'}`}
-                      title={isEx ? `Excess: +${exp.slice(1)} bags over ePOS stock` : `Balance bags remaining: ${exp} bags`}
-                    >
-                      (Bal: {exp}b)
-                    </span>
-                  );
-                })()}
-              </span>
-            </div>
+          {/* Single Row: 2. Adding: Commodity - Bag Wt - Total Bag - Balance in Color Code */}
+          {(() => {
+            const totalActiveBags = activeCommodity 
+              ? formatExpectedBagsWithFraction(activeCommodity.systemStockKg, 0, activeWeight)
+              : '0';
+            const activeBags = (commodityTotals || {})[activeCommodity?.id]?.bags || (commodityTotals || {})[activeCommodity?.label]?.bags || 0;
+            const exp = activeCommodity 
+              ? formatExpectedBagsWithFraction(activeCommodity.systemStockKg, activeBags, activeWeight)
+              : '0';
+            const isExcess = exp.startsWith('+');
+            const isZeroOrQuarter = exp === '0' || exp === '¼' || exp === '1/4';
 
-            {/* Bag weight indicator & Total ePOS Bags */}
-            <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-slate-500 text-[11px] whitespace-nowrap">Bag Wt:</span>
-              <button
-                type="button"
-                onClick={() => setUseCustomWeight(!useCustomWeight)}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition ${
-                  useCustomWeight 
-                    ? 'bg-amber-100 text-amber-900 border border-amber-300' 
-                    : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                }`}
-                title="Override standard bag weight for this stack"
-              >
-                {activeWeight} kg {useCustomWeight ? '(Custom)' : ''}
-              </button>
-              {useCustomWeight && (
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  max="100"
-                  value={customWeight}
-                  onChange={(e) => setCustomWeight(parseFloat(e.target.value) || 50)}
-                  className="w-12 text-center text-xs font-mono font-bold bg-white border border-slate-300 rounded px-1 py-0.5"
-                />
-              )}
-              {activeCommodity && (() => {
-                const totalActiveBags = formatExpectedBagsWithFraction(activeCommodity.systemStockKg, 0, activeWeight);
-                return (
-                  <span 
-                    className="text-slate-700 font-mono text-[11px] font-bold bg-white border border-slate-300 px-1.5 py-0.5 rounded shadow-2xs whitespace-nowrap"
-                    title={`Total expected bags in ePOS stock: ${activeCommodity.systemStockKg} kg ÷ ${activeWeight} kg = ${totalActiveBags} bags`}
+            let balColorClass = '';
+            if (isExcess) {
+              balColorClass = 'text-red-700 font-black border-red-300 bg-red-50';
+            } else if (isZeroOrQuarter && activeBags > 0) {
+              balColorClass = 'text-emerald-700 font-bold border-emerald-300 bg-emerald-50';
+            } else {
+              balColorClass = 'text-amber-800 font-bold border-amber-300 bg-amber-50';
+            }
+
+            let balText = '';
+            if (exp === '0') {
+              balText = '0b';
+            } else if (isExcess) {
+              balText = `+${exp.slice(1)}b`;
+            } else {
+              balText = `${exp}b`;
+            }
+
+            return (
+              <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-1.5 mb-2.5 select-none overflow-x-auto whitespace-nowrap pb-0.5 text-xs">
+                {/* 2. Adding: */}
+                <span className="text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider shrink-0">
+                  2. Adding:
+                </span>
+
+                {/* Commodity (clean, no bal inside) */}
+                <span className="text-xs font-bold bg-blue-600 text-white px-2 py-0.5 rounded-md shadow-2xs shrink-0">
+                  {activeCommodity ? (activeCommodity.shortLabel || activeCommodity.label) : 'Select'}
+                </span>
+
+                <span className="text-slate-400 font-mono text-xs shrink-0">-</span>
+
+                {/* Bag Wt */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="text-slate-500 text-[11px] hidden xs:inline">Bag:</span>
+                  <button
+                    type="button"
+                    onClick={() => setUseCustomWeight(!useCustomWeight)}
+                    className={`px-1.5 py-0.5 rounded text-[11px] font-semibold transition shrink-0 ${
+                      useCustomWeight 
+                        ? 'bg-amber-100 text-amber-900 border border-amber-300' 
+                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300 border border-slate-300'
+                    }`}
+                    title="Override standard bag weight for this stack"
                   >
-                    - Total {totalActiveBags}b
-                  </span>
-                );
-              })()}
-            </div>
-          </div>
+                    {activeWeight}kg{useCustomWeight ? '*' : ''}
+                  </button>
+                  {useCustomWeight && (
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      max="100"
+                      value={customWeight}
+                      onChange={(e) => setCustomWeight(parseFloat(e.target.value) || 50)}
+                      className="w-11 text-center text-xs font-mono font-bold bg-white border border-slate-300 rounded px-1 py-0.5"
+                    />
+                  )}
+                </div>
+
+                <span className="text-slate-400 font-mono text-xs shrink-0">-</span>
+
+                {/* Total Bag */}
+                <span 
+                  className="text-slate-800 font-mono text-[11px] font-bold bg-white border border-slate-300 px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap"
+                  title={`Total ePOS bags: ${activeCommodity?.systemStockKg || 0}kg ÷ ${activeWeight}kg = ${totalActiveBags}b`}
+                >
+                  Total: {totalActiveBags}b
+                </span>
+
+                <span className="text-slate-400 font-mono text-xs shrink-0">-</span>
+
+                {/* Balance in color code */}
+                <span 
+                  className={`font-mono text-[11px] px-1.5 py-0.5 rounded border shadow-2xs shrink-0 whitespace-nowrap ${balColorClass}`}
+                  title={`Balance bags remaining: ${balText}`}
+                >
+                  Bal: {balText}
+                </span>
+              </div>
+            );
+          })()}
 
           {/* Quick Presets Row: 10b, 11b, 12b, 13b, 14b, 15b & Partial Bags (+¼b, +½b, +¾b, +1b) */}
           <div className="mb-2 space-y-1">
