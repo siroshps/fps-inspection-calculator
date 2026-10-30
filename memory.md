@@ -35,6 +35,9 @@
 * **Fractional Bag Buttons**: Quick buttons for `+¼`, `+½`, `+¾`, and `+1` bags for loose/partially filled gunny bags.
 * **Touch-and-Hold (Long Press) History**: Pressing and holding any commodity button pops up that specific commodity's stack count history without leaving the numpad.
 * **Commodity Quick Stack Presets**: One-tap buttons for standard stack counts (`10`, `11`, `12`, `13`, `14`, `15`).
+* **All-Time Total Expected Bags Display**:
+  * **1. Select Commodity Grid**: Each card shows `ePOS: <kg>kg - <Total>b` (e.g. `ePOS: 4,000kg - 80b`) at all times alongside the counted weight, while the top row shows the countdown balance `(Bal: <exp>b)`.
+  * **2. Adding to Row**: Displays `2. Adding to: BR (Bal: 45b)` and explicitly displays `Bag Wt: 50 kg - Total 80b` so inspectors always know the total book bags regardless of stack progress.
 
 ### 3.2 Intelligent ePOS Scraper & Multi-Attempt Fetching (`api/scraper.py`, `App.jsx`)
 * **Target URL**: `https://epos.kerala.gov.in/fps_stock.action` (POST `fps_id`, `month`, `year`).
@@ -80,6 +83,14 @@
 ### 3.7 Share App Feature (`MasterMappingModal.jsx`)
 * Located under **App Settings $\rightarrow$ Update App & PWA $\rightarrow$ Share App to Others**.
 * Supports native OS mobile share sheet (`navigator.share`), 1-tap WhatsApp sharing, and clipboard copy with official announcement text.
+
+### 3.8 Sticky Bottom Summary Bar with QTL & Bag Counts (`StickyBottomSummary.jsx`)
+* **Collapsed Single-Line Bar**:
+  * Displays Total Rice system stock and physical count in **Quintals (QTL)** (1 Qtl = 100 kg) with 2 decimal places e.g., `40.00 Qtl (80b)` / `38.25 Qtl (76 ½b)`.
+  * Inline Bag Counts: Shows Total expected bags for ePOS and counted bags for Physical right inside the bar.
+  * Difference Badge: Stays in **kg** with soft pastel status badges (green for match, blue for excess, red for shortage).
+* **Expandable Category Breakdown Drawer**:
+  * Tapping the chevron expands the 4 canonical groups (Total Rice, Wheat, Atta, Other) showing ePOS and Physical stock in **kg** with difference in **kg**.
 
 ---
 
